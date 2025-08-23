@@ -9,7 +9,19 @@ require('dotenv').config();
 exports.auth = (req, res, next) => {
     try {
         // extract token by anyone from this 3 ways
-        const token = req.body?.token || req.cookies.token || req.header('Authorization').replace('Bearer ', '');
+        let token = null;
+        
+        // Check multiple sources for the token
+        if (req.body && req.body.token) {
+            token = req.body.token;
+        } else if (req.cookies && req.cookies.token) {
+            token = req.cookies.token;
+        } else if (req.header('Authorization')) {
+            const authHeader = req.header('Authorization');
+            if (authHeader.startsWith('Bearer ')) {
+                token = authHeader.replace('Bearer ', '');
+            }
+        }
 
         // if token is missing
         if (!token) {

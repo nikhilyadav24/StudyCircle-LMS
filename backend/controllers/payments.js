@@ -81,90 +81,175 @@ exports.capturePayment = async (req, res) => {
 
 // ================ verify the payment ================
 exports.verifyPayment = async (req, res) => {
-    const razorpay_order_id = req.body?.razorpay_order_id;
-    const razorpay_payment_id = req.body?.razorpay_payment_id;
-    const razorpay_signature = req.body?.razorpay_signature;
-    const courses = req.body?.coursesId;
-    const userId = req.user.id;
-    // console.log(' req.body === ', req.body)
+    try {
+        const razorpay_order_id = req.body?.razorpay_order_id;
+        const razorpay_payment_id = req.body?.razorpay_payment_id;
+        const razorpay_signature = req.body?.razorpay_signature;
+        const courses = req.body?.coursesId;
+        const userId = req.user.id;
+        
+        console.log('Payment verification data:', {
+            razorpay_order_id,
+            razorpay_payment_id,
+            razorpay_signature,
+            courses,
+            userId
+        });
 
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !courses || !userId) {
-        return res.status(400).json({ success: false, message: "Payment Failed, data not found" });
+        if (!courses || !userId) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Courses or User ID missing" 
+            });
+        }
+
+        // For mock/test payments (when payment IDs start with "mock_")
+        if (razorpay_order_id && razorpay_order_id.startsWith('mock_')) {
+            console.log('Processing mock payment - direct enrollment');
+            try {
+                await enrollStudents(courses, userId, res);
+                return res.status(200).json({ 
+                    success: true, 
+                    message: "Course enrolled successfully (Test Mode)" 
+                });
+            } catch (enrollError) {
+                return res.status(500).json({ 
+                    success: false, 
+                    message: "Enrollment failed",
+                    error: enrollError.message 
+                });
+            }
+        }
+
+        // Real payment verification
+        if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Payment verification data missing" 
+            });
+        }
+
+        let body = razorpay_order_id + "|" + razorpay_payment_id;
+        const expectedSignature = crypto
+            .createHmac("sha256", process.env.RAZORPAY_SECRET)
+            .update(body.toString())
+            .digest("hex");
+
+        if (expectedSignature === razorpay_signature) {
+            try {
+                //enroll student
+                await enrollStudents(courses, userId, res);
+                //return res
+                return res.status(200).json({ success: true, message: "Payment Verified" });
+            } catch (enrollError) {
+                return res.status(500).json({ 
+                    success: false, 
+                    message: "Enrollment failed after payment verification",
+                    error: enrollError.message 
+                });
+            }
+        }
+        return res.status(400).json({ success: false, message: "Payment Failed - Invalid Signature" });
+
+    } catch (error) {
+        console.error('Payment verification error:', error);
+        return res.status(500).json({ 
+            success: false, 
+            message: "Payment verification failed",
+            error: error.message 
+        });
     }
-
-    let body = razorpay_order_id + "|" + razorpay_payment_id;
-    const expectedSignature = crypto
-        .createHmac("sha256", process.env.RAZORPAY_SECRET)
-        .update(body.toString())
-        .digest("hex");
-
-    if (expectedSignature === razorpay_signature) {
-        //enroll student
-        await enrollStudents(courses, userId, res);
-        //return res
-        return res.status(200).json({ success: true, message: "Payment Verified" });
-    }
-    return res.status(200).json({ success: "false", message: "Payment Failed" });
-
 }
 
 
 // ================ enroll Students to course after payment ================
 const enrollStudents = async (courses, userId, res) => {
+    try {
+        if (!courses || !userId) {
+            throw new Error("Please Provide data for Courses or UserId");
+        }
 
-    if (!courses || !userId) {
-        return res.status(400).json({ success: false, message: "Please Provide data for Courses or UserId" });
-    }
+        console.log(`Enrolling user ${userId} in courses:`, courses);
 
-    for (const courseId of courses) {
-        try {
-            //find the course and enroll the student in it
-            const enrolledCourse = await Course.findOneAndUpdate(
-                { _id: courseId },
-                { $push: { studentsEnrolled: userId } },
-                { new: true },
-            )
+        for (const courseId of courses) {
+            try {
+                // Check if user is already enrolled
+                const existingCourse = await Course.findById(courseId);
+                if (!existingCourse) {
+                    throw new Error(`Course not found: ${courseId}`);
+                }
 
-            if (!enrolledCourse) {
-                return res.status(500).json({ success: false, message: "Course not Found" });
-            }
-            // console.log("Updated course: ", enrolledCourse)
+                if (existingCourse.studentsEnrolled.includes(userId)) {
+                    console.log(`User ${userId} already enrolled in course ${courseId}`);
+                    continue; // Skip if already enrolled
+                }
 
-            // Initialize course preogres with 0 percent
-            const courseProgress = await CourseProgress.create({
-                courseID: courseId,
-                userId: userId,
-                completedVideos: [],
-            })
+                //find the course and enroll the student in it
+                const enrolledCourse = await Course.findOneAndUpdate(
+                    { _id: courseId },
+                    { $push: { studentsEnrolled: userId } },
+                    { new: true },
+                )
 
-            // Find the student and add the course to their list of enrolled courses
-            const enrolledStudent = await User.findByIdAndUpdate(
-                userId,
-                {
-                    $push: {
-                        courses: courseId,
-                        courseProgress: courseProgress._id,
+                if (!enrolledCourse) {
+                    throw new Error(`Failed to enroll in course: ${courseId}`);
+                }
+                console.log("Updated course: ", enrolledCourse.courseName);
+
+                // Check if course progress already exists
+                let courseProgress = await CourseProgress.findOne({
+                    courseID: courseId,
+                    userId: userId
+                });
+
+                if (!courseProgress) {
+                    // Initialize course progress with 0 percent
+                    courseProgress = await CourseProgress.create({
+                        courseID: courseId,
+                        userId: userId,
+                        completedVideos: [],
+                    });
+                }
+
+                // Find the student and add the course to their list of enrolled courses
+                const enrolledStudent = await User.findByIdAndUpdate(
+                    userId,
+                    {
+                        $addToSet: { // Use $addToSet to avoid duplicates
+                            courses: courseId,
+                            courseProgress: courseProgress._id,
+                        },
                     },
-                },
-                { new: true }
-            )
+                    { new: true }
+                )
 
-            // console.log("Enrolled student: ", enrolledStudent)
+                console.log("Enrolled student: ", enrolledStudent.firstName);
 
-            // Send an email notification to the enrolled student
-            const emailResponse = await mailSender(
-                enrolledStudent.email,
-                `Successfully Enrolled into ${enrolledCourse.courseName}`,
-                courseEnrollmentEmail(enrolledCourse.courseName, `${enrolledStudent.firstName}`)
-            )
-            // console.log("Email Sent Successfully", emailResponse);
+                // Send an email notification to the enrolled student
+                try {
+                    const emailResponse = await mailSender(
+                        enrolledStudent.email,
+                        `Successfully Enrolled into ${enrolledCourse.courseName}`,
+                        courseEnrollmentEmail(enrolledCourse.courseName, `${enrolledStudent.firstName}`)
+                    );
+                    console.log("Email Sent Successfully");
+                } catch (emailError) {
+                    console.log("Email sending failed, but enrollment successful:", emailError);
+                    // Don't fail the enrollment if email fails
+                }
+            }
+            catch (error) {
+                console.log(`Error enrolling in course ${courseId}:`, error);
+                throw error; // Re-throw to be caught by outer try-catch
+            }
         }
-        catch (error) {
-            console.log(error);
-            return res.status(500).json({ success: false, message: error.message });
-        }
+
+        console.log('All courses enrolled successfully');
+        return true; // Return success indicator
+    } catch (error) {
+        console.error('Enrollment error:', error);
+        throw error; // Re-throw to be handled by calling function
     }
-
 }
 
 
