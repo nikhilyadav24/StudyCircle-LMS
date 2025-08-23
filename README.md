@@ -1,6 +1,6 @@
 # StudyCircle - Complete EdTech Platform 🎓
 
-<img src='./frontend/src/assets/Logo/Logo-Full-Light.png' width="300" />
+<img src='frontend/src/assets/Logo/logo.png' width="300" />
 
 ## 📋 Project Overview
 
