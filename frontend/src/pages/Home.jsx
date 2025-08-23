@@ -1,305 +1,181 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from "react-router-dom"
-import { useDispatch } from 'react-redux';
 
 import HighlightText from '../components/core/HomePage/HighlightText'
 import CTAButton from "../components/core/HomePage/Button"
-import CodeBlocks from "../components/core/HomePage/CodeBlocks"
-import TimelineSection from '../components/core/HomePage/TimelineSection'
-import LearningLanguageSection from '../components/core/HomePage/LearningLanguageSection'
-import InstructorSection from '../components/core/HomePage/InstructorSection'
 import Footer from '../components/common/Footer'
-import ExploreMore from '../components/core/HomePage/ExploreMore'
-import ReviewSlider from '../components/common/ReviewSlider'
 import Course_Slider from '../components/core/Catalog/Course_Slider'
 
-import { getCatalogPageData } from '../services/operations/pageAndComponentData'
+import { getAllCourses } from '../services/operations/courseDetailsAPI'
 
-import { MdOutlineRateReview } from 'react-icons/md'
-import { FaArrowRight } from "react-icons/fa"
+import { FaArrowRight, FaGraduationCap, FaUsers, FaCertificate } from "react-icons/fa"
 
 import { motion } from 'framer-motion'
 import { fadeIn, } from './../components/common/motionFrameVarients';
 
-// background random images
-import backgroundImg1 from '../assets/Images/random bg img/coding bg1.jpg'
-import backgroundImg2 from '../assets/Images/random bg img/coding bg2.jpg'
-import backgroundImg3 from '../assets/Images/random bg img/coding bg3.jpg'
-import backgroundImg4 from '../assets/Images/random bg img/coding bg4.jpg'
-import backgroundImg5 from '../assets/Images/random bg img/coding bg5.jpg'
-import backgroundImg6 from '../assets/Images/random bg img/coding bg6.jpeg'
-import backgroundImg7 from '../assets/Images/random bg img/coding bg7.jpg'
-import backgroundImg8 from '../assets/Images/random bg img/coding bg8.jpeg'
-import backgroundImg9 from '../assets/Images/random bg img/coding bg9.jpg'
-import backgroundImg10 from '../assets/Images/random bg img/coding bg10.jpg'
-import backgroundImg111 from '../assets/Images/random bg img/coding bg11.jpg'
-
-
-const randomImges = [
-    backgroundImg1,
-    backgroundImg2,
-    backgroundImg3,
-    backgroundImg4,
-    backgroundImg5,
-    backgroundImg6,
-    backgroundImg7,
-    backgroundImg8,
-    backgroundImg9,
-    backgroundImg10,
-    backgroundImg111,
-];
-
-// hardcoded
-
 
 
 const Home = () => {
-
-    // get background random images
-    const [backgroundImg, setBackgroundImg] = useState(null);
+    // get all courses data
+    const [allCourses, setAllCourses] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const bg = randomImges[Math.floor(Math.random() * randomImges.length)]
-        setBackgroundImg(bg);
+        const fetchAllCourses = async () => {
+            setLoading(true);
+            try {
+                const courses = await getAllCourses();
+                setAllCourses(courses || []);
+            } catch (error) {
+                console.error("Error fetching courses:", error);
+                setAllCourses([]);
+            } finally {
+                setLoading(false);
+            }
+        }
+        
+        fetchAllCourses();
     }, [])
-
-    // console.log('bg ==== ', backgroundImg)
-
-    // get courses data
-    const [CatalogPageData, setCatalogPageData] = useState(null);
-    const categoryID = "6506c9dff191d7ffdb4a3fe2" // hard coded
-    const dispatch = useDispatch();
-
-    useEffect(() => {
-        const fetchCatalogPageData = async () => {
-
-            const result = await getCatalogPageData(categoryID, dispatch);
-            setCatalogPageData(result);
-            // console.log("page data ==== ",CatalogPageData);
-        }
-        if (categoryID) {
-            fetchCatalogPageData();
-        }
-    }, [categoryID])
-
-
-    // console.log('================ CatalogPageData?.selectedCourses ================ ', CatalogPageData)
 
 
     return (
         <React.Fragment>
-            {/* background random image */}
-            <div>
-                <div className="w-full h-[450px] md:h-[650px] absolute top-0 left-0 opacity-[0.3] overflow-hidden object-cover ">
-                    <img src={backgroundImg} alt="Background"
-                        className="w-full h-full object-cover "
-                    />
-
-                    <div className="absolute left-0 bottom-0 w-full h-[250px] opacity_layer_bg "></div>
-                </div>
-            </div>
-
-            <div className=' '>
-                {/*Section1  */}
-                <div className='relative h-[450px] md:h-[550px] justify-center mx-auto flex flex-col w-11/12 max-w-maxContent items-center text-white '>
-
+            <div className='bg-richblack-900'>
+                {/* Hero Section */}
+                <div className='relative h-[500px] justify-center mx-auto flex flex-col w-11/12 max-w-maxContent items-center text-white'>
                     <Link to={"/signup"}>
-                        <div className='z-0 group p-1 mx-auto rounded-full bg-richblack-800 font-bold text-richblack-200
-                                        transition-all duration-200 hover:scale-95 w-fit'>
-                            <div className='flex flex-row items-center gap-2 rounded-full px-10 py-[5px]
+                        <div className='group p-1 mx-auto rounded-full bg-richblack-800 font-bold text-richblack-200
+                                        transition-all duration-200 hover:scale-95 w-fit mb-8'>
+                            <div className='flex flex-row items-center gap-2 rounded-full px-8 py-[8px]
                               transition-all duration-200 group-hover:bg-richblack-900'>
                                 <p>Become an Instructor</p>
                                 <FaArrowRight />
                             </div>
                         </div>
-
                     </Link>
 
                     <motion.div
-                        variants={fadeIn('left', 0.1)}
+                        variants={fadeIn('up', 0.1)}
                         initial='hidden'
                         whileInView={'show'}
                         viewport={{ once: false, amount: 0.1 }}
-                        className='text-center text-3xl lg:text-4xl font-semibold mt-7  '
+                        className='text-center text-4xl lg:text-5xl font-bold mt-4'
                     >
-                        Empower Your Future with
-                        <HighlightText text={"Coding Skills"} />
+                        Learn <HighlightText text={"Coding Skills"} /> Online
                     </motion.div>
 
                     <motion.div
-                        variants={fadeIn('right', 0.1)}
+                        variants={fadeIn('up', 0.2)}
                         initial='hidden'
                         whileInView={'show'}
                         viewport={{ once: false, amount: 0.1 }}
-                        className=' mt-4 w-[90%] text-center text-base lg:text-lg font-bold text-richblack-300'
+                        className='mt-6 w-[90%] max-w-[600px] text-center text-lg text-richblack-300'
                     >
-                        With our online coding courses, you can learn at your own pace, from anywhere in the world, and get access to a wealth of resources, including hands-on projects, quizzes, and personalized feedback from instructors.
+                        Master programming with our comprehensive courses. Learn at your own pace with hands-on projects and expert guidance.
                     </motion.div>
 
-
-                    <div className='flex flex-row gap-7 mt-8'>
+                    <div className='flex flex-row gap-6 mt-8'>
                         <CTAButton active={true} linkto={"/signup"}>
-                            Learn More
+                            Start Learning
                         </CTAButton>
-
                         <CTAButton active={false} linkto={"/login"}>
-                            Book a Demo
+                            View Courses
                         </CTAButton>
                     </div>
                 </div>
 
-                {/* animated code */}
-                <div className='relative mx-auto flex flex-col w-11/12 max-w-maxContent items-center text-white justify-between'>
-                    {/* Code block 1 */}
-                    <div className=''>
-                        <CodeBlocks
-                            position={"lg:flex-row"}
-                            heading={
-                                <div className='text-3xl lg:text-4xl font-semibold'>
-                                    Unlock Your
-                                    <HighlightText text={"coding potential "} />
-                                    with our online courses
-                                </div>
-                            }
-                            subheading={
-                                "Our courses are designed and taught by industry experts who have years of experience in coding and are passionate about sharing their knowledge with you."
-                            }
-                            ctabtn1={
-                                {
-                                    btnText: "try it yourself",
-                                    linkto: "/signup",
-                                    active: true,
-                                }
-                            }
-                            ctabtn2={
-                                {
-                                    btnText: "learn more",
-                                    linkto: "/login",
-                                    active: false,
-                                }
-                            }
-
-                            codeblock={`<<!DOCTYPE html>\n<html>\n<head><title>Example</title>\n</head>\n<body>\n<h1><ahref="/">Header</a>\n</h1>\n<nav><ahref="one/">One</a><ahref="two/">Two</a><ahref="three/">Three</a>\n</nav>`}
-                            codeColor={"text-yellow-25"}
-                            backgroundGradient={"code-block1-grad"}
-                        />
+                {/* Stats Section */}
+                <div className='bg-richblack-800 py-12'>
+                    <div className='w-11/12 max-w-maxContent mx-auto'>
+                        <div className='grid grid-cols-1 md:grid-cols-3 gap-8 text-center text-white'>
+                            <div className='flex flex-col items-center'>
+                                <FaGraduationCap className='text-4xl text-yellow-50 mb-4' />
+                                <h3 className='text-2xl font-bold mb-2'>{allCourses.length}+</h3>
+                                <p className='text-richblack-300'>Courses Available</p>
+                            </div>
+                            <div className='flex flex-col items-center'>
+                                <FaUsers className='text-4xl text-yellow-50 mb-4' />
+                                <h3 className='text-2xl font-bold mb-2'>10,000+</h3>
+                                <p className='text-richblack-300'>Students Enrolled</p>
+                            </div>
+                            <div className='flex flex-col items-center'>
+                                <FaCertificate className='text-4xl text-yellow-50 mb-4' />
+                                <h3 className='text-2xl font-bold mb-2'>5,000+</h3>
+                                <p className='text-richblack-300'>Certificates Issued</p>
+                            </div>
+                        </div>
                     </div>
-
-
-                    {/* Code block 2 */}
-                    <div>
-                        <CodeBlocks
-                            position={"lg:flex-row-reverse"}
-                            heading={
-                                <div className="w-[100%] text-3xl lg:text-4xl font-semibold lg:w-[50%]">
-                                    Start
-                                    <HighlightText text={"coding in seconds"} />
-                                </div>
-                            }
-                            subheading={
-                                "Go ahead, give it a try. Our hands-on learning environment means you'll be writing real code from your very first lesson."
-                            }
-                            ctabtn1={{
-                                btnText: "Continue Lesson",
-                                link: "/signup",
-                                active: true,
-                            }}
-                            ctabtn2={{
-                                btnText: "Learn More",
-                                link: "/signup",
-                                active: false,
-                            }}
-                            codeColor={"text-white"}
-                            codeblock={`import React from "react";\n import CTAButton from "./Button";\nimport TypeAnimation from "react-type";\nimport { FaArrowRight } from "react-icons/fa";\n\nconst Home = () => {\nreturn (\n<div>Home</div>\n)\n}\nexport default Home;`}
-                            backgroundGradient={"code-block2-grad"}
-                        />
-                    </div>
-
-                    {/* course slider */}
-                    <div className='mx-auto box-content w-full max-w-maxContentTab px- py-12 lg:max-w-maxContent'>
-                        <h2 className='text-white mb-6 text-2xl '>
-                            Popular Picks for You 🏆
-                        </h2>
-                        <Course_Slider Courses={CatalogPageData?.selectedCategory?.courses} />
-                    </div>
-                    <div className=' mx-auto box-content w-full max-w-maxContentTab px- py-12 lg:max-w-maxContent'>
-                        <h2 className='text-white mb-6 text-2xl '>
-                            Top Enrollments Today 🔥
-                        </h2>
-                        <Course_Slider Courses={CatalogPageData?.mostSellingCourses} />
-                    </div>
-
-
-                    <ExploreMore />
                 </div>
 
-                {/*Section 2  */}
-                <div className='bg-pure-greys-5 text-richblack-700 '>
-                    <div className='homepage_bg h-[310px]'>
-                        <div className='w-11/12 max-w-maxContent flex flex-col items-center justify-between gap-5 mx-auto'>
-                            <div className='h-[150px]'></div>
-                            <div className='flex flex-row gap-7 text-white '>
+                {/* All Courses Section */}
+                <div className='py-16 bg-richblack-900'>
+                    <div className='w-11/12 max-w-maxContent mx-auto'>
+                        <motion.div
+                            variants={fadeIn('up', 0.1)}
+                            initial='hidden'
+                            whileInView={'show'}
+                            viewport={{ once: false, amount: 0.1 }}
+                            className='text-center mb-12'
+                        >
+                            <h2 className='text-3xl lg:text-4xl font-bold text-white mb-4'>
+                                Explore Our <HighlightText text={"Courses"} />
+                            </h2>
+                            <p className='text-richblack-300 text-lg max-w-[600px] mx-auto'>
+                                Choose from our wide range of programming courses designed by industry experts
+                            </p>
+                        </motion.div>
+
+                        {loading ? (
+                            <div className='flex justify-center items-center py-12'>
+                                <div className='spinner'></div>
+                                <p className='text-white ml-4'>Loading courses...</p>
+                            </div>
+                        ) : allCourses.length > 0 ? (
+                            <Course_Slider Courses={allCourses} />
+                        ) : (
+                            <div className='text-center py-12'>
+                                <p className='text-richblack-300 text-lg'>No courses available at the moment.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Call to Action Section */}
+                <div className='bg-richblack-800 py-16'>
+                    <div className='w-11/12 max-w-maxContent mx-auto text-center'>
+                        <motion.div
+                            variants={fadeIn('up', 0.1)}
+                            initial='hidden'
+                            whileInView={'show'}
+                            viewport={{ once: false, amount: 0.1 }}
+                        >
+                            <h2 className='text-3xl lg:text-4xl font-bold text-white mb-6'>
+                                Ready to Start Your <HighlightText text={"Coding Journey"} />?
+                            </h2>
+                            <p className='text-richblack-300 text-lg mb-8 max-w-[600px] mx-auto'>
+                                Join thousands of students already learning with StudyCircle. Start your programming career today!
+                            </p>
+                            <div className='flex flex-row gap-6 justify-center'>
                                 <CTAButton active={true} linkto={"/signup"}>
-                                    <div className='flex items-center gap-3' >
-                                        Explore Full Catalog
+                                    <div className='flex items-center gap-3'>
+                                        Get Started Now
                                         <FaArrowRight />
                                     </div>
                                 </CTAButton>
-                                <CTAButton active={false} linkto={"/signup"}>
-                                    <div>
-                                        Learn more
-                                    </div>
+                                <CTAButton active={false} linkto={"/catalog"}>
+                                    Browse Catalog
                                 </CTAButton>
                             </div>
-                        </div>
+                        </motion.div>
                     </div>
-
-                    <div className='mx-auto w-11/12 max-w-maxContent flex flex-col items-center justify-between gap-7'>
-                        <div className='flex flex-col lg:flex-row gap-5 mb-10 mt-[95px]'>
-                            <div className='text-3xl lg:text-4xl font-semibold w-full lg:w-[45%]'>
-                                Get the Skills you need for a
-                                <HighlightText text={"Job that is in demand"} />
-                            </div>
-
-                            <div className='flex flex-col gap-10 w-full lg:w-[40%] items-start'>
-                                <div className='text-[16px]'>
-                                    The modern StudyCircle is the dictates its own terms. Today, to be a competitive specialist requires more than professional skills.
-                                </div>
-                                <CTAButton active={true} linkto={"/signup"}>
-                                    <div>
-                                        Learn more
-                                    </div>
-                                </CTAButton>
-                            </div>
-                        </div>
-
-
-                        {/* leadership */}
-                        <TimelineSection />
-
-                        <LearningLanguageSection />
-
-                    </div>
-
                 </div>
 
-
-                {/*Section 3 */}
-                <div className='mt-14 w-11/12 mx-auto max-w-maxContent flex-col items-center justify-between gap-8 first-letter bg-richblack-900 text-white'>
-                    <InstructorSection />
-
-                    {/* Reviws from Other Learner */}
-                    <h1 className="text-center text-3xl lg:text-4xl font-semibold mt-8 flex justify-center items-center gap-x-3">
-                        Reviews from other learners <MdOutlineRateReview className='text-yellow-25' />
-                    </h1>
-                    <ReviewSlider />
-                </div>
-
-                {/*Footer */}
+                {/* Footer */}
                 <Footer />
-            </div >
+            </div>
         </React.Fragment>
     )
 }
 
 export default Home
+
