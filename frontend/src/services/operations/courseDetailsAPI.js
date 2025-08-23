@@ -421,24 +421,33 @@ export const getFullDetailsOfCourse = async (courseId, token) => {
 
 
 // ================ mark Lecture As Complete ================
-export const markLectureAsComplete = async (data, token) => {
+export const markLectureAsComplete = async (token, subsectionIds, courseId) => {
   let result = null
-  // console.log("mark complete data", data)
+  
+  // Prepare the data in the format expected by backend
+  const data = {
+    courseId: courseId,
+    subsectionId: Array.isArray(subsectionIds) ? subsectionIds[0] : subsectionIds // Backend expects single subsectionId
+  }
+  
+  console.log("Marking lecture as complete:", data)
   const toastId = toast.loading("Loading...")
+  
   try {
     const response = await apiConnector("POST", LECTURE_COMPLETION_API, data, {
       Authorization: `Bearer ${token}`,
     })
     console.log("MARK_LECTURE_AS_COMPLETE_API API RESPONSE............", response)
 
-    if (!response.data.message) {
-      throw new Error(response.data.error)
+    if (!response.data.success) {
+      throw new Error(response.data.message || response.data.error || "Failed to update progress")
     }
     toast.success("Lecture Completed")
     result = true
   } catch (error) {
     console.log("MARK_LECTURE_AS_COMPLETE_API API ERROR............", error)
-    toast.error(error.message)
+    console.log("Error details:", error.response?.data);
+    toast.error(error.response?.data?.message || error.message || "Failed to mark lecture as complete")
     result = false
   }
   toast.dismiss(toastId)

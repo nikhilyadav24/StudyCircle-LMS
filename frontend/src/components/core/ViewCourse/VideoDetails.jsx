@@ -130,9 +130,18 @@ const VideoDetails = () => {
 
   const handleLectureCompletion = async () => {
     setLoading(true)
-    const result = await markLectureAsComplete(token, [subSectionId], courseId)
+    console.log('Attempting to mark lecture as complete:', {
+      courseId,
+      subSectionId,
+      token: token ? 'present' : 'missing'
+    })
+    
+    const result = await markLectureAsComplete(token, subSectionId, courseId)
     if (result) {
       dispatch(updateCompletedLectures(subSectionId))
+      console.log('Lecture marked as complete successfully')
+    } else {
+      console.log('Failed to mark lecture as complete')
     }
     setLoading(false)
   }

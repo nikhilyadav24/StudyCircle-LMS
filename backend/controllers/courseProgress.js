@@ -6,14 +6,32 @@ const CourseProgress = require("../models/courseProgress")
 
 // ================ update Course Progress ================
 exports.updateCourseProgress = async (req, res) => {
-  const { courseId, subsectionId } = req.body
-  const userId = req.user.id
-
   try {
+    const { courseId, subsectionId } = req.body
+    const userId = req.user.id
+
+    console.log('Updating course progress:', {
+      courseId,
+      subsectionId,
+      userId
+    });
+
+    // Validation
+    if (!courseId || !subsectionId) {
+      return res.status(400).json({
+        success: false,
+        message: "Course ID and Subsection ID are required"
+      })
+    }
+
     // Check if the subsection is valid
     const subsection = await SubSection.findById(subsectionId)
     if (!subsection) {
-      return res.status(404).json({ error: "Invalid subsection" })
+      console.log('Subsection not found:', subsectionId);
+      return res.status(404).json({
+        success: false,
+        message: "Invalid subsection"
+      })
     }
 
     // Find the course progress document for the user and course
@@ -23,29 +41,41 @@ exports.updateCourseProgress = async (req, res) => {
     })
 
     if (!courseProgress) {
-      // If course progress doesn't exist, create a new one
-      return res.status(404).json({
-        success: false,
-        message: "Course progress Does Not Exist",
-      })
+      // Create a new course progress if it doesn't exist
+      console.log('Creating new course progress for user:', userId, 'course:', courseId);
+      courseProgress = await CourseProgress.create({
+        courseID: courseId,
+        userId: userId,
+        completedVideos: [subsectionId]
+      });
     } else {
       // If course progress exists, check if the subsection is already completed
       if (courseProgress.completedVideos.includes(subsectionId)) {
-        return res.status(400).json({ error: "Subsection already completed" })
+        return res.status(200).json({
+          success: true,
+          message: "Subsection already completed"
+        })
       }
 
       // Push the subsection into the completedVideos array
       courseProgress.completedVideos.push(subsectionId)
+      await courseProgress.save()
     }
 
-    // Save the updated course progress
-    await courseProgress.save()
+    console.log('Course progress updated successfully');
 
-    return res.status(200).json({ message: "Course progress updated" })
+    return res.status(200).json({
+      success: true,
+      message: "Course progress updated successfully"
+    })
   }
   catch (error) {
-    console.error(error)
-    return res.status(500).json({ error: "Internal server error" })
+    console.error('Error updating course progress:', error)
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message
+    })
   }
 }
 
