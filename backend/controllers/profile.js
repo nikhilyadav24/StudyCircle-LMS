@@ -202,9 +202,12 @@ exports.updateUserProfileImage = async (req, res) => {
 exports.getEnrolledCourses = async (req, res) => {
     try {
         const userId = req.user.id
-        let userDetails = await User.findOne({ _id: userId, })
+        console.log('Fetching enrolled courses for user:', userId);
+
+        let userDetails = await User.findOne({ _id: userId })
             .populate({
                 path: "courses",
+                match: { _id: { $exists: true } }, // Only populate existing courses
                 populate: {
                     path: "courseContent",
                     populate: {
@@ -214,27 +217,60 @@ exports.getEnrolledCourses = async (req, res) => {
             })
             .exec()
 
+        // Check if user exists before calling toObject()
+        if (!userDetails) {
+            console.log('User not found with ID:', userId);
+            return res.status(404).json({
+                success: false,
+                message: `Could not find user with id: ${userId}`,
+            })
+        }
+
+        // Convert to plain object safely
         userDetails = userDetails.toObject()
+        console.log('User found, courses count:', userDetails.courses?.length || 0);
+
+        // Initialize courses array if it doesn't exist
+        if (!userDetails.courses) {
+            userDetails.courses = [];
+        }
+
+        // Filter out any null course references (deleted courses)
+        userDetails.courses = userDetails.courses.filter(course => course !== null && course !== undefined);
+        console.log('Valid courses after filtering:', userDetails.courses.length);
 
         var SubsectionLength = 0
         for (var i = 0; i < userDetails.courses.length; i++) {
             let totalDurationInSeconds = 0
             SubsectionLength = 0
-            for (var j = 0; j < userDetails.courses[i].courseContent.length; j++) {
-                totalDurationInSeconds += userDetails.courses[i].courseContent[
-                    j
-                ].subSection.reduce((acc, curr) => acc + parseInt(curr.timeDuration), 0)
-
-                userDetails.courses[i].totalDuration = convertSecondsToDuration(totalDurationInSeconds)
-                SubsectionLength += userDetails.courses[i].courseContent[j].subSection.length
+            
+            // Safety check for courseContent
+            if (!userDetails.courses[i].courseContent) {
+                userDetails.courses[i].courseContent = [];
+                userDetails.courses[i].totalDuration = "0 min";
+                userDetails.courses[i].progressPercentage = 0;
+                continue;
             }
+
+            for (var j = 0; j < userDetails.courses[i].courseContent.length; j++) {
+                // Safety check for subSection
+                if (userDetails.courses[i].courseContent[j].subSection) {
+                    totalDurationInSeconds += userDetails.courses[i].courseContent[j].subSection.reduce((acc, curr) => {
+                        return acc + (parseInt(curr.timeDuration) || 0);
+                    }, 0);
+
+                    SubsectionLength += userDetails.courses[i].courseContent[j].subSection.length;
+                }
+            }
+
+            userDetails.courses[i].totalDuration = convertSecondsToDuration(totalDurationInSeconds)
 
             let courseProgressCount = await CourseProgress.findOne({
                 courseID: userDetails.courses[i]._id,
                 userId: userId,
             })
 
-            courseProgressCount = courseProgressCount?.completedVideos.length
+            courseProgressCount = courseProgressCount?.completedVideos?.length || 0;
 
             if (SubsectionLength === 0) {
                 userDetails.courses[i].progressPercentage = 100
@@ -246,18 +282,14 @@ exports.getEnrolledCourses = async (req, res) => {
             }
         }
 
-        if (!userDetails) {
-            return res.status(400).json({
-                success: false,
-                message: `Could not find user with id: ${userDetails}`,
-            })
-        }
+        console.log('Processed courses with progress:', userDetails.courses.length);
 
         return res.status(200).json({
             success: true,
             data: userDetails.courses,
         })
     } catch (error) {
+        console.error('Error in getEnrolledCourses:', error);
         return res.status(500).json({
             success: false,
             message: error.message,

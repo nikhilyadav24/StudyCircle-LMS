@@ -229,6 +229,66 @@ app.get('/debug/categories', async (req, res) => {
     }
 });
 
+// Debug route to check user enrolled courses
+app.get('/debug/user/:userId/courses', async (req, res) => {
+    try {
+        const User = require('./models/user');
+        const Course = require('./models/course');
+        const CourseProgress = require('./models/courseProgress');
+        
+        const userId = req.params.userId;
+        console.log('=== DEBUG USER COURSES ===');
+        console.log('User ID:', userId);
+        
+        // Get user with courses
+        const user = await User.findById(userId).populate('courses');
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        
+        console.log('User:', user.firstName, user.lastName);
+        console.log('Enrolled courses count:', user.courses.length);
+        
+        // Check each course
+        const courseDetails = [];
+        for (const course of user.courses) {
+            const fullCourse = await Course.findById(course._id).populate('courseContent');
+            const progress = await CourseProgress.findOne({ userId, courseID: course._id });
+            
+            courseDetails.push({
+                id: course._id,
+                name: course.courseName,
+                status: course.status,
+                contentSections: fullCourse?.courseContent?.length || 0,
+                progress: progress ? progress.completedVideos.length : 0
+            });
+            
+            console.log(`- ${course.courseName} (${course.status})`);
+            console.log(`  Content sections: ${fullCourse?.courseContent?.length || 0}`);
+            console.log(`  Progress: ${progress ? progress.completedVideos.length : 0} videos completed`);
+        }
+        
+        res.json({
+            message: 'User courses debug info logged to console',
+            userId,
+            userInfo: {
+                name: `${user.firstName} ${user.lastName}`,
+                email: user.email,
+                totalCourses: user.courses.length
+            },
+            courses: courseDetails
+        });
+        
+    } catch (error) {
+        console.error('Debug user courses error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Debug failed',
+            error: error.message
+        });
+    }
+});
+
 // Test route to check environment variables
 app.get('/debug/env', (req, res) => {
     res.json({
