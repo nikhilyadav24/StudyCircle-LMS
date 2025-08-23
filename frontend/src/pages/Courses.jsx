@@ -31,6 +31,12 @@ function Courses() {
                 // Fetch all categories
                 const categoriesData = await fetchCourseCategories()
                 setCategories(categoriesData || [])
+                
+                // Debug logging
+                console.log('Fetched courses:', coursesData?.length || 0)
+                console.log('Fetched categories:', categoriesData?.length || 0)
+                console.log('Sample course with category:', coursesData?.[0])
+                console.log('All categories:', categoriesData?.map(cat => cat.name))
             } catch (error) {
                 console.log("Error fetching data:", error)
             } finally {
@@ -46,10 +52,16 @@ function Courses() {
         if (selectedCategory === "All") {
             setFilteredCourses(allCourses)
         } else {
-            const filtered = allCourses.filter(course => 
-                course.category?.name === selectedCategory
-            )
+            const filtered = allCourses.filter(course => {
+                // Handle cases where category might be null or missing
+                if (!course.category) return false
+                
+                // Check both exact match and case-insensitive match
+                return course.category.name === selectedCategory ||
+                       course.category.name?.toLowerCase() === selectedCategory.toLowerCase()
+            })
             setFilteredCourses(filtered)
+            console.log(`Filtering for category "${selectedCategory}":`, filtered.length, 'courses found')
         }
     }, [selectedCategory, allCourses])
 
@@ -125,9 +137,11 @@ function Courses() {
                                 All Courses ({allCourses.length})
                             </button>
                             {categories.map((category) => {
-                                const categoryCount = allCourses.filter(course => 
-                                    course.category?.name === category.name
-                                ).length
+                                const categoryCount = allCourses.filter(course => {
+                                    if (!course.category) return false
+                                    return course.category.name === category.name ||
+                                           course.category.name?.toLowerCase() === category.name.toLowerCase()
+                                }).length
                                 return (
                                     <button
                                         key={category._id}
@@ -169,9 +183,11 @@ function Courses() {
                                     All Courses ({allCourses.length})
                                 </button>
                                 {categories.map((category) => {
-                                    const categoryCount = allCourses.filter(course => 
-                                        course.category?.name === category.name
-                                    ).length
+                                    const categoryCount = allCourses.filter(course => {
+                                        if (!course.category) return false
+                                        return course.category.name === category.name ||
+                                               course.category.name?.toLowerCase() === category.name.toLowerCase()
+                                    }).length
                                     return (
                                         <button
                                             key={category._id}
