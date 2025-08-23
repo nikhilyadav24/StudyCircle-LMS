@@ -9,6 +9,7 @@ import Signup from "./pages/Signup"
 import ForgotPassword from "./pages/ForgotPassword";
 import UpdatePassword from "./pages/UpdatePassword";
 import Catalog from './pages/Catalog';
+import Courses from './pages/Courses';
 import CourseDetails from './pages/CourseDetails';
 
 import Navbar from "./components/common/Navbar"
@@ -89,6 +90,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="catalog/:catalogName" element={<Catalog />} />
+        <Route path="courses" element={<Courses />} />
         <Route path="courses/:courseId" element={<CourseDetails />} />
 
         {/* Open Route - for Only Non Logged in User */}

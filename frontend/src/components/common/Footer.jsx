@@ -7,7 +7,7 @@ import { FaEnvelope } from "react-icons/fa";
 import StudyNotionLogo from "../../assets/Logo/logo.png";
 
 // Simplified footer data
-const QuickLinks = ["About", "Contact", "Catalog", "Careers"];
+const QuickLinks = ["About", "Contact", "Courses", "Careers"];
 const Policies = ["Privacy Policy", "Terms & Conditions"];
 
 
@@ -58,16 +58,16 @@ const Footer = () => {
           <div>
             <h3 className="text-richblack-50 font-semibold text-sm mb-4">Categories</h3>
             <div className="flex flex-col gap-2">
-              <Link to="/catalog" className="text-sm text-richblack-300 hover:text-white transition-colors duration-300">
+              <Link to="/courses" className="text-sm text-richblack-300 hover:text-white transition-colors duration-300">
                 Web Development
               </Link>
-              <Link to="/catalog" className="text-sm text-richblack-300 hover:text-white transition-colors duration-300">
+              <Link to="/courses" className="text-sm text-richblack-300 hover:text-white transition-colors duration-300">
                 Data Science
               </Link>
-              <Link to="/catalog" className="text-sm text-richblack-300 hover:text-white transition-colors duration-300">
+              <Link to="/courses" className="text-sm text-richblack-300 hover:text-white transition-colors duration-300">
                 Mobile Development
               </Link>
-              <Link to="/catalog" className="text-sm text-richblack-300 hover:text-white transition-colors duration-300">
+              <Link to="/courses" className="text-sm text-richblack-300 hover:text-white transition-colors duration-300">
                 DevOps
               </Link>
             </div>

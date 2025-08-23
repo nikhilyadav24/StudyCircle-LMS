@@ -56,7 +56,7 @@ function MobileProfileDropDown() {
                     <Link to='/' onClick={() => setOpen(false)}>
                         <div className="flex w-full items-center gap-x-1 py-[10px] px-[12px] text-sm text-richblack-100">
                             <PiNotebook className="text-lg" />
-                            Catalog
+                            Courses
                         </div>
                     </Link>
 

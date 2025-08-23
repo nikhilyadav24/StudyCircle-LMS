@@ -162,8 +162,8 @@ const Home = () => {
                                         <FaArrowRight />
                                     </div>
                                 </CTAButton>
-                                <CTAButton active={false} linkto={"/catalog"}>
-                                    Browse Catalog
+                                <CTAButton active={false} linkto={"/courses"}>
+                                    Browse Courses
                                 </CTAButton>
                             </div>
                         </motion.div>
