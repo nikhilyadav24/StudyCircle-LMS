@@ -7,6 +7,8 @@ const CourseProgress = require('../models/courseProgress')
 
 const { uploadImageToCloudinary, deleteResourceFromCloudinary } = require('../utils/imageUploader');
 const { convertSecondsToDuration } = require("../utils/secToDuration")
+const mailSender = require('../utils/mailSender');
+const { courseEnrollmentEmail } = require('../mail/templates/courseEnrollmentEmail');
 
 
 
@@ -613,6 +615,116 @@ exports.deleteCourse = async (req, res) => {
             message: "Error while Deleting course",
             error: error.message,
         })
+    }
+}
+
+// ================ Direct Course Enrollment (Free) ================
+exports.enrollCourse = async (req, res) => {
+    try {
+        const { coursesId } = req.body;
+        const userId = req.user.id;
+
+        console.log('=== DIRECT ENROLLMENT STARTED ===');
+        console.log('Courses to enroll:', coursesId);
+        console.log('User ID:', userId);
+
+        if (!coursesId || coursesId.length === 0) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Please provide Course IDs" 
+            });
+        }
+
+        // Enroll in each course
+        for (const courseId of coursesId) {
+            try {
+                // Check if course exists
+                const course = await Course.findById(courseId);
+                if (!course) {
+                    return res.status(404).json({ 
+                        success: false, 
+                        message: `Course not found: ${courseId}` 
+                    });
+                }
+
+                // Check if user is already enrolled
+                if (course.studentsEnrolled.includes(userId)) {
+                    console.log(`User ${userId} already enrolled in course ${courseId}`);
+                    continue; // Skip if already enrolled
+                }
+
+                // Enroll the student in the course
+                const enrolledCourse = await Course.findByIdAndUpdate(
+                    courseId,
+                    { $push: { studentsEnrolled: userId } },
+                    { new: true }
+                );
+
+                console.log("Enrolled in course:", enrolledCourse.courseName);
+
+                // Create course progress
+                let courseProgress = await CourseProgress.findOne({
+                    courseID: courseId,
+                    userId: userId
+                });
+
+                if (!courseProgress) {
+                    courseProgress = await CourseProgress.create({
+                        courseID: courseId,
+                        userId: userId,
+                        completedVideos: [],
+                    });
+                }
+
+                // Add course to user's enrolled courses
+                const enrolledStudent = await User.findByIdAndUpdate(
+                    userId,
+                    {
+                        $addToSet: { // Use $addToSet to avoid duplicates
+                            courses: courseId,
+                            courseProgress: courseProgress._id,
+                        },
+                    },
+                    { new: true }
+                );
+
+                console.log("Student enrolled:", enrolledStudent.firstName);
+
+                // Send enrollment email
+                try {
+                    await mailSender(
+                        enrolledStudent.email,
+                        `Successfully Enrolled into ${enrolledCourse.courseName}`,
+                        courseEnrollmentEmail(enrolledCourse.courseName, `${enrolledStudent.firstName}`)
+                    );
+                    console.log("Enrollment email sent successfully");
+                } catch (emailError) {
+                    console.log("Email sending failed, but enrollment successful:", emailError);
+                    // Don't fail the enrollment if email fails
+                }
+
+            } catch (error) {
+                console.log(`Error enrolling in course ${courseId}:`, error);
+                return res.status(500).json({ 
+                    success: false, 
+                    message: `Failed to enroll in course: ${courseId}`,
+                    error: error.message 
+                });
+            }
+        }
+
+        return res.status(200).json({ 
+            success: true, 
+            message: "Successfully enrolled in all courses" 
+        });
+
+    } catch (error) {
+        console.error('Course enrollment error:', error);
+        return res.status(500).json({ 
+            success: false, 
+            message: "Course enrollment failed",
+            error: error.message 
+        });
     }
 }
 

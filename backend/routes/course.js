@@ -12,6 +12,7 @@ const {
     editCourse,
     deleteCourse,
     getInstructorCourses,
+    enrollCourse,
 
 } = require('../controllers/course')
 
@@ -94,6 +95,9 @@ router.delete("/deleteCourse", auth, isInstructor, deleteCourse)
 
 // update Course Progress
 router.post("/updateCourseProgress", auth, isStudent, updateCourseProgress)
+
+// Enroll in course (Free)
+router.post("/enrollCourse", auth, isStudent, enrollCourse)
 
 
 

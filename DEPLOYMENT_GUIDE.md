@@ -82,8 +82,6 @@ MAIL_PASS=your_mail_password
 CLOUD_NAME=your_cloudinary_cloud_name
 API_KEY=your_cloudinary_api_key
 API_SECRET=your_cloudinary_api_secret
-RAZORPAY_KEY=your_razorpay_key
-RAZORPAY_SECRET=your_razorpay_secret
 ```
 
 ## Troubleshooting

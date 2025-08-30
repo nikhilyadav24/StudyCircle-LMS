@@ -192,7 +192,7 @@ VITE_APP_BASE_URL=http://localhost:4000/api/v1
 - React.js community for excellent documentation
 - MongoDB for flexible database solutions
 - Cloudinary for media management
-- Razorpay for payment processing
+- Free course enrollment system
 - All open-source contributors
 
 ---
